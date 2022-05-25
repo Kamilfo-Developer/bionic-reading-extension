@@ -3,7 +3,7 @@ function activate() {
         isActivated: true
     });
 
-    const TAGS_TO_CHANGE = ["p", "span", "a", "dd", "dt", "div"]
+    const TAGS_TO_CHANGE = ["p", "li", "span", "a", "dd", "dt", "div"]
 
     for (let i = 0; i < TAGS_TO_CHANGE.length; i++) {
         formatTag(TAGS_TO_CHANGE[i])
@@ -16,17 +16,22 @@ function activate() {
 //#region all the html stuff
 
 function formatTag(tag) {
-    elems = document.querySelectorAll(tag);
+    const elems = document.querySelectorAll(tag);
 
     for (let i = 0; i < elems.length; i++) {
-        elems[i].innerHTML = formatHTML(elems[i].innerHTML).join("");
+        elems[i].innerHTML = formatHTML(elems[i].innerHTML);
     }
 }
 
 function formatHTML(html) {
+    if (html.includes(`bionic-reading-text-selection`)) {
+        return html
+    }
+
     return separateHTMLAndText(html).map((elem) => {
         if (isHTMLTag(elem)) {
-            if (elem.includes(`<strong class="bionic-reading-text-selection">`)) {
+            if (elem.includes(`bionic-reading-text-selection`)) {
+                
                 return elem;
             }
 
@@ -34,17 +39,22 @@ function formatHTML(html) {
         }
 
         return formatSentence(elem);
-    });
+    }).join("");
 }
 
 function makeTextHTMLElement(name, content, attributes, singleTag = false) {
 
-    let result = `<${name}`
-    const attributesKeys = Object.keys(attributes);
+    let result = `<${name}`;
 
-    for (let i = 0; i < attributesKeys.length; i++) {
-        result = `${result} ${attributesKeys[i]}="${attributes[attributesKeys[i]]}"`;
+    if (attributes) {
+        const attributesKeys = Object.keys(attributes);
+        
+        for (let i = 0; i < attributesKeys.length; i++) {
+            result = `${result} ${attributesKeys[i]}="${attributes[attributesKeys[i]]}"`;
+        }
     }
+    
+    
 
     if (singleTag) {
         return `${result}>`;
@@ -76,7 +86,7 @@ function isTagSingle(html) {
 function getTagName(html) {
     return new DOMParser()
         .parseFromString(html, "text/html")
-        .body.firstChild.tagName.toLowerCase();
+        .body.firstChild?.tagName?.toLowerCase();
 }
 
 function getAttributes(html) {
@@ -86,7 +96,11 @@ function getAttributes(html) {
 
     const result = {}
 
-    const attributeNames = elem.getAttributeNames();
+    const attributeNames = elem?.getAttributeNames();
+
+    if (attributeNames == null) {
+        return null;
+    }
 
     for (let i = 0; i < attributeNames.length; i++) {
         result[attributeNames[i]] = elem.getAttribute(attributeNames[i]);
@@ -98,7 +112,7 @@ function getAttributes(html) {
 function extractContent(html) {
     return new DOMParser()
         .parseFromString(html, "text/html")
-        .body.firstChild.innerHTML;
+        .body.firstChild?.innerHTML;
 }
 
 function separateHTMLAndText(html) {
@@ -108,10 +122,19 @@ function separateHTMLAndText(html) {
 }
 
 function formatWord(word) {
-    return word.length > 1 ? `<strong class="bionic-reading-text-selection">${word.slice(0, Math.floor(word.length / 2))}</strong>${word.slice(Math.floor(word.length / 2))}` : word;
+    if (word.includes("bionic-reading-text-selection")) {
+        return word;
+    }
+
+    return word.length > 1 ? `<strong class="bionic-reading-text-selection">${word.slice(0, Math.floor(word.length / 2))}</strong>${word.slice(Math.floor(word.length / 2))}` : `<strong class="bionic-reading-text-selection">${word}</strong>`;
 }
 
 function formatSentence(sentence) {
+    if (sentence.includes("bionic-reading-text-selection")) {
+        console.log(`It is here!!!${sentence}`)
+        return sentence;
+    }
+
     const result = [];
 
     const splited = sentence.split(" ");
